@@ -3,19 +3,25 @@ import matplotlib.pyplot as plt
 
 np.random.seed(12)
 
-def montecarlo_point(upper, lower):
+def randomsample_1d(upper, lower):
+    return np.random.random() * (upper-lower) + lower
+
+def randomsample_3d(upper, lower):
     """Creates a random 3D point within a cube with bounds upper and lower."""
-    x = np.random.random() * (upper-lower) + lower
-    y = np.random.random() * (upper-lower) + lower
-    z = np.random.random() * (upper-lower) + lower
+    x = randomsample_1d(upper, lower)
+    y = randomsample_1d(upper, lower)
+    z = randomsample_1d(upper, lower)
 
     return x, y, z
 
-def logistic_sequence(coords, m=3.8):
+def logisticsample_1d(current, m=3.8):
+    return m*current * (1-current)
+
+def logisticsample_3d(coords):
     x, y, z = coords
-    x = m*x * (1-x)
-    y = m*y * (1-y)
-    z = m*z * (1-z)
+    x = logisticsample_1d(x)
+    y = logisticsample_1d(y)
+    z = logisticsample_1d(z)
     coords = x, y, z
     return coords
 
@@ -84,6 +90,7 @@ def visualise_torus(list_coords, r_maj, r_min, upper, lower):
     plt.show()
 
     plt.scatter(lx, ly, s=1)
+    plt.title("Top View of Samples in Torus")
     plt.show()
 
 def visualise_intersection(list_coords, k, r_maj, r_min, upper, lower):
@@ -105,12 +112,22 @@ def visualise_intersection(list_coords, k, r_maj, r_min, upper, lower):
     ax.set_zlim(lower, upper)
     plt.show()
 
-def montecarlo_intersection(N, upper, lower, k, r_maj, r_min, visualise=False):
-    list_intersect = []
+def randomsequence_1d(upper, lower, steps):
+    return [randomsample_1d(upper, lower) for _ in range(steps)]
+
+def randomsequence_3d(upper, lower, steps):
     list_coords = []
-    for _ in range(N):
-        coords = montecarlo_point(upper, lower)
+    for _ in range(steps):
+        coords = randomsample_3d(upper, lower)
         list_coords.append(coords)
+    
+    return list_coords
+
+def random_intersection(N, upper, lower, k, r_maj, r_min, visualise=False):
+    list_intersect = []
+
+    list_coords = randomsequence_3d(upper, lower, N)
+    for coords in list_coords:
         if in_sphere(coords, k) and in_torus(coords, r_maj, r_min):
             list_intersect.append(1)
     
@@ -127,21 +144,44 @@ def montecarlo_intersection(N, upper, lower, k, r_maj, r_min, visualise=False):
 def transform_to_bounds(value, upper, lower, mini=0.1805, maxi=0.95):
     return (((value - mini) * (upper - lower)) / (maxi - mini)) + lower
 
-def logistic_intersection(N, upper, lower, k, r_maj, r_min, coords_0=(np.random.random()*(0.95-0.1805)*0.1805, np.random.random()*(0.95-0.1805)*0.1805, np.random.random()*(0.95-0.1805)*0.1805), visualise=False):
-    list_intersect = []
+def logisticsequence_1d(x_0, upper, lower, steps):
+    x = x_0
+    lx = [x]
+    while len(lx) < steps:
+        x = logisticsample_1d(x)
+        lx.append(x)
+    
+    for i in range(steps):
+        lx[i] = transform_to_bounds(lx[i], upper, lower)
 
+    return lx
+
+def logisticsequence_3d(upper, lower, steps):
+    coords_0=(np.random.random()*(0.95-0.1805)*0.1805, np.random.random()*(0.95-0.1805)*0.1805, np.random.random()*(0.95-0.1805)*0.1805)
     x, y, z = coords_0
-    lx_logistic, ly_logistic, lz_logistic = [x], [y], [z]
-    for _ in range(N):
-        x, y, z = logistic_sequence((x,y,z))
-        lx_logistic.append(x)
-        ly_logistic.append(y)
-        lz_logistic.append(z)
+    lx, ly, lz = [x], [y], [z]
+
+    for _ in range(steps-1):
+        x, y, z = logisticsample_3d((x, y, z))
+        lx.append(x)
+        ly.append(y)
+        lz.append(z)
+
+    for i in range(steps):
+        lx[i] = transform_to_bounds(lx[i], upper, lower)
+        ly[i] = transform_to_bounds(ly[i], upper, lower)
+        lz[i] = transform_to_bounds(lz[i], upper, lower)
 
     list_coords = []
-    for i in range(len(lx_logistic)):
-        list_coords.append((transform_to_bounds(lx_logistic[i], upper, lower), transform_to_bounds(ly_logistic[i], upper, lower), transform_to_bounds(lz_logistic[i], upper, lower)))
+    for i in range(len(lx)):
+        list_coords.append((lx[i], ly[i], lz[i]))
 
+    return list_coords
+
+def logistic_intersection(N, upper, lower, k, r_maj, r_min, visualise=False):
+    list_intersect = []
+
+    list_coords = logisticsequence_3d(upper, lower, N)
     for coords in list_coords:
         if in_sphere(coords, k) and in_torus(coords, r_maj, r_min):
             list_intersect.append(1)
@@ -156,6 +196,21 @@ def logistic_intersection(N, upper, lower, k, r_maj, r_min, coords_0=(np.random.
         visualise_intersection(list_coords, k, r_maj, r_min, upper, lower)
 
     return intersect_size
+
+def plot_distribution(func, upper, steps):
+    lower = -1*upper
+    if func == logisticsequence_1d:
+        lx = logisticsequence_1d(np.random.random()*(0.95-0.1805)+0.1805, upper, lower, steps)
+        title = "Logistic Sequence Samples Distribution"
+    else:
+        lx = randomsequence_1d(upper, lower, steps)
+        title = "Uniform Random Samples Distribution"
+
+    plt.hist(lx, bins=100)
+    plt.title(title)
+    plt.xlabel("Sample value")
+    plt.ylabel("Frequency")
+    plt.show()
 
 def plot_comparison(case, bounds):
     """
@@ -179,7 +234,7 @@ def plot_comparison(case, bounds):
         uni_temp = []
         log_temp = []
         for _ in range(10):
-            uni_temp.append(montecarlo_intersection(100000, bound, -1*bound, k, r_maj, r_min))
+            uni_temp.append(random_intersection(100000, bound, -1*bound, k, r_maj, r_min))
             log_temp.append(logistic_intersection(100000, bound, -1*bound, k, r_maj, r_min))
         uniform_randoms.append(np.mean(uni_temp))
         uniform_randoms_err.append(np.std(uni_temp))
@@ -189,15 +244,19 @@ def plot_comparison(case, bounds):
     plt.errorbar(bounds, uniform_randoms, uniform_randoms_err, label="Uniform")
     plt.errorbar(bounds, logistics, logistics_err, label="Logistic")
     plt.legend()
+    plt.title("Intersection Area vs Bounding Box")
+    plt.ylabel("Intersection Area")
+    plt.xlabel("Bounding Box Upper Bound")
     plt.show()
 
-# print(montecarlo_intersection(100000, 1.15, -1.15, 1, 0.75, 0.4))
-# print(montecarlo_intersection(100000, 1.15, -1.15, 1, 0.5, 0.5))
+plot_distribution(logisticsequence_1d, 1.2, 100000)
+plot_distribution(randomsequence_1d, 1.2, 100000)
+# plot_distribution(logisticsequence_1d, 3.0, 100000)
+# plot_distribution(randomsequence_1d, 3.0, 100000)
 
-# # the results of the logistic intersection depend on the bounds,
-# # might be interesting to plot that compared to the uniform random distribution
-# print(logistic_intersection(100000, 1.2, -1.2, 1, 0.75, 0.4, visualise=True))
-# print(logistic_intersection(100000, 2, -2, 1, 0.75, 0.4, visualise=True))
+# the results of the logistic intersection depend on the bounds
+print(logistic_intersection(100000, 1.2, -1.2, 1, 0.75, 0.4, visualise=True))
+# print(logistic_intersection(100000, 3, -3, 1, 0.75, 0.4, visualise=True))
 # print(logistic_intersection(100000, 1.15, -1.15, 1, 0.5, 0.5))
 
-plot_comparison("A", [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3])
+plot_comparison("A", [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0])
