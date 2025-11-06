@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import mpl_toolkits.mplot3d.art3d as art3d
 
 
 # --- Parameters ---
@@ -72,6 +73,7 @@ def ex1(visualize=False):
 		fig = plt.figure()
 
 		for i, ((volume, hits), params) in enumerate(zip(data, cases)):
+			r, t_R, t_r = params
 
 			# 3d scatter plot of samples
 			ax = fig.add_subplot(2, 2, (i+1), projection="3d")
@@ -79,17 +81,42 @@ def ex1(visualize=False):
 			ax.set_xlabel("x")
 			ax.set_ylabel("y")
 			ax.set_zlabel("z")
+			ax.set_box_aspect([1, 1, 1])
+			ax.view_init(elev=40, azim=-60)
 
 			xs = hits[:,0]
 			ys = hits[:,1]
 			zs = hits[:,2]
 
-			ax.scatter(xs, ys, zs, s = 1)
-			ax.set_box_aspect((np.ptp(xs), np.ptp(ys), np.ptp(zs)))
+			ax.scatter(xs, ys, zs, s=1, alpha=0.1)
+
+			# 2d surface along the x-axis
+			x = np.linspace(b_box[0,0], b_box[0,1], 2)
+			z = np.linspace(b_box[2,0], b_box[2,1], 2)
+			X, Z = np.meshgrid(x, z)
+			Y = np.full_like(X, 0)
+			ax.plot_surface(X, Y, Z, color='grey', alpha=0.2)
+
+			torus1 = plt.Circle(( t_R, 0), t_r, color='r', fill=False, label="torus")
+			torus2 = plt.Circle((-t_R, 0), t_r, color='r', fill=False, label="torus")
+			sphere = plt.Circle((   0, 0), r  , color='g', fill=False, label="sphere")
+			b_box_rect = plt.Rectangle((b_box[0,0], b_box[2,0]), b_box_size[0], b_box_size[2], color='b', fill=False, label="bounding box")
+			ax.add_patch(torus1)
+			ax.add_patch(torus2)
+			ax.add_patch(sphere)
+			ax.add_patch(b_box_rect)
+			art3d.pathpatch_2d_to_3d(torus1, z=0, zdir="y")
+			art3d.pathpatch_2d_to_3d(torus2, z=0, zdir="y")
+			art3d.pathpatch_2d_to_3d(sphere, z=0, zdir="y")
+			art3d.pathpatch_2d_to_3d(b_box_rect, z=0, zdir="y")
+
+			ax.set_xlim(b_box[0,0], b_box[0,1])
+			ax.set_ylim(b_box[1,0], b_box[1,1])
+			ax.set_zlim(b_box[2,0], b_box[2,1])
 
 			# 2d slice along x-axis: analytical circles
-			r, t_R, t_r = params
 			ax = fig.add_subplot(2, 2, (i+1)+2)
+			ax.set_title("2d slice along x-axis")
 			ax.axis('equal')
 			ax.set_xlabel("x")
 			ax.set_ylabel("z")
