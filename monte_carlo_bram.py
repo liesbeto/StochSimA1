@@ -72,7 +72,13 @@ def ex1(visualize=False):
 		fig = plt.figure()
 
 		for i, ((volume, hits), params) in enumerate(zip(data, cases)):
-			ax = fig.add_subplot(2, 2, i*2 + 1, projection="3d")
+
+			# 3d scatter plot of samples
+			ax = fig.add_subplot(2, 2, (i+1), projection="3d")
+			ax.set_title(f"case {i+1}: $r_{{sphere}}$ = {r}, $R_{{torus}}$ = {t_R}, $r_{{torus}}$ = {t_r}")
+			ax.set_xlabel("x")
+			ax.set_ylabel("y")
+			ax.set_zlabel("z")
 
 			xs = hits[:,0]
 			ys = hits[:,1]
@@ -81,13 +87,12 @@ def ex1(visualize=False):
 			ax.scatter(xs, ys, zs, s = 1)
 			ax.set_box_aspect((np.ptp(xs), np.ptp(ys), np.ptp(zs)))
 
-			# 2d slice along x-axis
+			# 2d slice along x-axis: analytical circles
 			r, t_R, t_r = params
-			ax = fig.add_subplot(2, 2, i*2 + 2)
+			ax = fig.add_subplot(2, 2, (i+1)+2)
 			ax.axis('equal')
-			ax.set_title(f"case {i+1}: $r_{{sphere}}$ = {r}, $R_{{torus}}$ = {t_R}, $r_{{torus}}$ = {t_r}")
-			# ax.set_xlim(b_box[0,0], b_box[0,1])
-			# ax.set_ylim(b_box[2,0], b_box[2,1])
+			ax.set_xlabel("x")
+			ax.set_ylabel("z")
 			torus1 = plt.Circle(( t_R, 0), t_r, color='r', fill=False, label="torus")
 			torus2 = plt.Circle((-t_R, 0), t_r, color='r', fill=False, label="torus")
 			sphere = plt.Circle((   0, 0), r  , color='g', fill=False, label="sphere")
@@ -97,7 +102,7 @@ def ex1(visualize=False):
 			ax.add_patch(sphere)
 			ax.add_patch(b_box_rect)
 
-			# 2d slice sample scatterplot
+			# 2d slice along x-axis: samples
 			mask_slice = (hits[:,1] > -0.05) & (hits[:,1] < 0.05)
 			x = hits[mask_slice,0]
 			y = hits[mask_slice,2]
