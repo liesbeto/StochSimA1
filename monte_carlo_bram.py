@@ -4,8 +4,9 @@ import numpy as np
 
 # --- Parameters ---
 n_samples = 100000
-b_box = np.array([[-2, 2], [-2, 2], [-2, 2]])
-b_box_volume = np.prod(b_box[:,1] - b_box[:, 0])
+b_box = np.array([[-1.4, 1.4], [-1.4, 1.4], [-1.2, 1.2]])
+b_box_size = b_box[:,1] - b_box[:, 0]
+b_box_volume = np.prod(b_box_size)
 print("bounding box volume:", b_box_volume)
 
 
@@ -53,15 +54,63 @@ def monte_carlo_3d(b_box, in_shape_func, sampler):
 
 
 # --- Excercises ---
-def ex1():
+def ex1(visualize=False):
 	print("Ex1 - sphere intersect torus, uniform:")
 
-	f1 = lambda x, y, z: in_sphere(x, y, z, 1) and in_torus(x, y, z, 0.75, 0.4) # case a
-	f2 = lambda x, y, z: in_sphere(x, y, z, 1) and in_torus(x, y, z, 0.5, 0.5)# case b
+	cases = [(1, 0.75, 0.4), # case a
+			 (1, 0.5 , 0.5)] # case b
 	
-	for i, f in enumerate([f1, f2], 1): # enumerate starting from 1 instead of 0
-		volume, _ = monte_carlo_3d(b_box, f, uniform_sampler)
-		print(f"  case {i}: {volume:.5f}")
+	data = []
+	for i, params in enumerate(cases):
+		r, t_R, t_r = params
+		f = lambda x, y, z: in_sphere(x, y, z, r) and in_torus(x, y, z, t_R, t_r) # case a
+		volume, hits = monte_carlo_3d(b_box, f, uniform_sampler)
+		data.append((volume, hits))
+		print(f"  case {i+1}: {volume:.5f}")
+
+	if visualize:
+		fig = plt.figure()
+
+		for i, ((volume, hits), params) in enumerate(zip(data, cases)):
+			ax = fig.add_subplot(2, 2, i*2 + 1, projection="3d")
+
+			xs = hits[:,0]
+			ys = hits[:,1]
+			zs = hits[:,2]
+
+			ax.scatter(xs, ys, zs, s = 1)
+			ax.set_box_aspect((np.ptp(xs), np.ptp(ys), np.ptp(zs)))
+
+			# 2d slice along x-axis
+			r, t_R, t_r = params
+			ax = fig.add_subplot(2, 2, i*2 + 2)
+			ax.axis('equal')
+			ax.set_title(f"case {i+1}: $r_{{sphere}}$ = {r}, $R_{{torus}}$ = {t_R}, $r_{{torus}}$ = {t_r}")
+			# ax.set_xlim(b_box[0,0], b_box[0,1])
+			# ax.set_ylim(b_box[2,0], b_box[2,1])
+			torus1 = plt.Circle(( t_R, 0), t_r, color='r', fill=False, label="torus")
+			torus2 = plt.Circle((-t_R, 0), t_r, color='r', fill=False, label="torus")
+			sphere = plt.Circle((   0, 0), r  , color='g', fill=False, label="sphere")
+			b_box_rect = plt.Rectangle((b_box[0,0], b_box[2,0]), b_box_size[0], b_box_size[2], color='b', fill=False, label="bounding box")
+			ax.add_patch(torus1)
+			ax.add_patch(torus2)
+			ax.add_patch(sphere)
+			ax.add_patch(b_box_rect)
+
+			# 2d slice sample scatterplot
+			mask_slice = (hits[:,1] > -0.05) & (hits[:,1] < 0.05)
+			x = hits[mask_slice,0]
+			y = hits[mask_slice,2]
+			ax.scatter(x, y, s = 1, label="samples")
+
+		plt.tight_layout()
+
+		# remove doulbe labels
+		handles, labels = plt.gca().get_legend_handles_labels()
+		dict_of_labels = dict(zip(labels, handles))
+		plt.legend(dict_of_labels.values(), dict_of_labels.keys())
+
+		plt.show()
 
 def ex2():
 	print("Ex2 - logistic sampling:")
@@ -89,7 +138,7 @@ def ex3(visualize=False):
 
 		plt.show()
 
-ex1()
-ex2()
-ex3(visualize=True)
+ex1(visualize=True)
+# ex2()
+# ex3()
 
