@@ -17,7 +17,7 @@ def montecarlo_point(upper, lower, P):
         small = True
     return (x, y, z), small
 
-def logistic_sequence(coords, m=3.8):
+def logistic_point(coords, m=3.8):
     x, y, z = coords
     x = m*x * (1-x)
     y = m*y * (1-y)
@@ -107,7 +107,6 @@ def visualise_torus(list_coords, r_maj, r_min, center_coord):
     plt.scatter(lx, ly)
     plt.show()
 
-
 def visualise_intersection(list_coords, k, r_maj, r_min, center_coord):
     lx, ly, lz = [], [], []
     for x,y,z in list_coords:
@@ -127,13 +126,11 @@ def visualise_intersection(list_coords, k, r_maj, r_min, center_coord):
 def transform_to_bounds(value, upper, lower, mini=0.1805, maxi=0.95):
     return (((value - mini) * (upper - lower)) / (maxi - mini)) + lower
 
-def logistic_intersection(N, upper, lower, k, r_maj, r_min, coords_0=(np.random.random()*(0.95-0.1805)*0.1805, np.random.random()*(0.95-0.1805)*0.1805, np.random.random()*(0.95-0.1805)*0.1805), visualise=False):
-    list_intersect = []
-
-    x, y, z = coords_0
+def logistic_sequence(N, upper, lower):
+    x, y, z = np.random.random()*(0.95-0.1805)*0.1805, np.random.random()*(0.95-0.1805)*0.1805, np.random.random()*(0.95-0.1805)*0.1805
     lx_logistic, ly_logistic, lz_logistic = [x], [y], [z]
     for _ in range(N):
-        x, y, z = logistic_sequence((x,y,z))
+        x, y, z = logistic_point((x,y,z))
         lx_logistic.append(x)
         ly_logistic.append(y)
         lz_logistic.append(z)
@@ -142,6 +139,12 @@ def logistic_intersection(N, upper, lower, k, r_maj, r_min, coords_0=(np.random.
     for i in range(len(lx_logistic)):
         list_coords.append((transform_to_bounds(lx_logistic[i], upper, lower), transform_to_bounds(ly_logistic[i], upper, lower), transform_to_bounds(lz_logistic[i], upper, lower)))
 
+    return list_coords
+
+def logistic_intersection(N, upper, lower, k, r_maj, r_min, visualise=False):
+    list_intersect = []
+
+    list_coords = logistic_sequence(N, upper, lower)
     for coords in list_coords:
         if in_sphere(coords, k) and in_torus(coords, r_maj, r_min):
             list_intersect.append(1)
@@ -157,15 +160,22 @@ def logistic_intersection(N, upper, lower, k, r_maj, r_min, coords_0=(np.random.
 
     return intersect_size
 
-def montecarlo_intersection(N, upper, lower, k, r_maj, r_min, visualise=False, P = 1):
-    list_intersect = []
+def montecarlo_sequence(N, upper, lower, P=1):
     list_coords = []
     for _ in range(N):
         coords = montecarlo_point(upper, lower, P)
         list_coords.append(coords)
+    
+    return list_coords
+
+def montecarlo_intersection(N, upper, lower, k, r_maj, r_min, visualise=False, P = 1):
+    list_intersect = []
+    
+    list_coords = montecarlo_sequence(N, upper, lower)
+    for coords in list_coords:
         if in_sphere(coords, k) and in_torus(coords, r_maj, r_min):
             list_intersect.append(1)
-    
+
     intersect_frac = len(list_intersect) / N
     intersect_size = intersect_frac * ((upper - lower) ** 3)
 
@@ -175,6 +185,25 @@ def montecarlo_intersection(N, upper, lower, k, r_maj, r_min, visualise=False, P
         visualise_intersection(list_coords, k, r_maj, r_min, upper, lower)
 
     return intersect_size
+
+def plot_freqdist(N, upper, lower, func=montecarlo_sequence):
+    lx = []
+
+    list_coords = func(N, upper, lower)
+    for coord in list_coords:
+        x = list(coord)[0][0]
+        lx.append(x)
+
+    if func == montecarlo_sequence:
+        title = "Uniform Random Samples Distribution"
+    else:
+        title = "Logistic Sequence Samples Distribution"
+
+    plt.hist(lx, bins=100)
+    plt.xlabel("Sample Value")
+    plt.ylabel("Frequency")
+    plt.title(title)
+    plt.show()
 
 def question2_plot(case, bounds):
     """
@@ -222,9 +251,9 @@ def calculate_intersection_boxes(N, upper, lower, k, r_maj, r_min, sampling_meth
             coords, small = montecarlo_point(upper, lower, P)
         else:
             if just_started:
-                coords = logistic_sequence(coords_0)
+                coords = logistic_point(coords_0)
             else:
-                coords = logistic_sequence(list_coords[-1])
+                coords = logistic_point(list_coords[-1])
         list_coords.append(coords)
         if small:
             if in_sphere(coords, k) and in_torus(coords, r_maj, r_min, center_coord):
@@ -389,6 +418,7 @@ def ex1(visualize=False):
 
 def main():
     ex1(visualize=True)
+    plot_freqdist(100000, 1.15, -1.15, montecarlo_sequence)
     question2_plot("A", [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3])
     question3_plot(repeats=100)
     
