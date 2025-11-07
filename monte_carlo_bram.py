@@ -56,7 +56,8 @@ def monte_carlo_3d(b_box, in_shape_func, sampler):
 
 # --- Excercises ---
 def ex1(visualize=False):
-	print("Ex1 - sphere intersect torus, uniform:")
+	print("Ex1 - sphere intersect torus, uniform sampling:\n\
+          est_vol +/- std_err")
 
 	cases = [(1, 0.75, 0.4), # case a
 			 (1, 0.5 , 0.5)] # case b
@@ -66,18 +67,26 @@ def ex1(visualize=False):
 		r, t_R, t_r = params
 		f = lambda x, y, z: in_sphere(x, y, z, r) and in_torus(x, y, z, t_R, t_r) # case a
 		volume, hits = monte_carlo_3d(b_box, f, uniform_sampler)
-		data.append((volume, hits))
-		print(f"  case {i+1}: {volume:.5f}")
+
+		# estimated standard error
+		f_mean = hits.size / n_samples
+		f_var = f_mean * (1 - f_mean)
+		std_err = volume * np.sqrt(f_var / n_samples)
+
+		data.append((volume, hits, std_err))
+		print(f"  case {i+1}: {volume:.5f} +/- {std_err:.5f}")
 
 	if visualize:
 		fig = plt.figure()
 
-		for i, ((volume, hits), params) in enumerate(zip(data, cases)):
+		for i, ((volume, hits, std_err), params) in enumerate(zip(data, cases)):
 			r, t_R, t_r = params
 
 			# 3d scatter plot of samples
 			ax = fig.add_subplot(2, 2, (i+1), projection="3d")
-			ax.set_title(f"case {i+1}: $r_{{sphere}}$ = {r}, $R_{{torus}}$ = {t_R}, $r_{{torus}}$ = {t_r}")
+			ax.set_title(f"case {i+1}:\n\
+$r_{{sphere}}$ = {r}, $R_{{torus}}$ = {t_R}, $r_{{torus}}$ = {t_r}\n\
+vol $\pm$ std_err = {volume:.5f} $\pm$ {std_err:.5f}")
 			ax.set_xlabel("x")
 			ax.set_ylabel("y")
 			ax.set_zlabel("z")
@@ -140,10 +149,10 @@ def ex1(visualize=False):
 Monte carlo integration: intersection of sphere and torus \n\
 bounding box: \n\
 $x_{{min}}$ = {b_box[0,0]}, $x_{{max}}$ = {b_box[0,1]}\n\
-$y_{{min}}$ = {b_box[0,0]}, $y_{{max}}$ = {b_box[0,1]}\n\
-$z_{{min}}$ = {b_box[0,0]}, $z_{{max}}$ = {b_box[0,1]}")
+$y_{{min}}$ = {b_box[1,0]}, $y_{{max}}$ = {b_box[1,1]}\n\
+$z_{{min}}$ = {b_box[2,0]}, $z_{{max}}$ = {b_box[2,1]}")
 
-		# remove doulbe labels
+		# remove double labels in legend
 		handles, labels = plt.gca().get_legend_handles_labels()
 		dict_of_labels = dict(zip(labels, handles))
 		plt.legend(dict_of_labels.values(), dict_of_labels.keys())
