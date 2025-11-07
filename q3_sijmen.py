@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import statistics as st
-
+np.random.seed(0)
 
 def montecarlo_point(upper, lower, P):
     """Creates a random 3D point within a cube with bounds upper and lower."""
@@ -11,9 +11,9 @@ def montecarlo_point(upper, lower, P):
         z = np.random.random() * (upper-lower) + lower
         small = False
     else:
-        x = np.random.random() * (upper-lower) + lower
-        y = np.random.random() * (upper-lower) + lower
-        z = np.random.random() * (0.5-(-0.3)) + (-0.3)
+        x = np.random.random() * (1.151-(-1.151)) + (-1.151)
+        y = np.random.random() * (1.151-(-1.151)) + (-1.151)
+        z = np.random.random() * (0.501-(-0.301)) + (-0.301)
         small = True
     return (x, y, z), small
 
@@ -131,15 +131,22 @@ def calculate_intersection_boxes(N, upper, lower, k, r_maj, r_min, sampling_meth
     
     intersect_frac = len(list1) / N
     intersect_size = intersect_frac * ((upper - lower) ** 3)
-    intersect_frac_small = intersect_inside_smallbox / N_small
-    intersect_size_small = intersect_frac_small * ((0.5-(-0.3)) * (upper - lower) ** 2 )
-    intersect_frac_big = intersect_inside_bigbox / N_big
-    intersect_size_big = intersect_frac_big * ((upper - lower) ** 3)    
+    if N_small > 0:
+        intersect_frac_small = intersect_inside_smallbox / N_small
+        intersect_size_small = intersect_frac_small * ((0.501-(-0.301)) * (1.151 - (-1.151)) ** 2 )
+    if N_big > 0:
+        intersect_frac_big = intersect_inside_bigbox / N_big
+        intersect_size_big = intersect_frac_big * ((upper - lower) ** 3)    
 #    visualise_all(list_coords, k)
 #    visualise_sphere(list_coords, k)
 #    visualise_torus(list_coords, r_maj, r_min, center_coord)
 #    visualise_intersection(list_coords, k, r_maj, r_min)
-    return intersect_size_small, intersect_size_big
+    if N_small > 0 and N_big == 0:
+        return intersect_size_small
+    if N_big > 0 and N_small == 0:
+        return intersect_size_big
+    else:
+        return intersect_size_small, intersect_size_big
 
 #torus height = z + - 0.4
 center_coord=[0, 0, 0.1]
@@ -151,20 +158,31 @@ values_list = []
 for prob in range(1,10):
     p = prob/10
     temp_values = []
-    for _ in range(10):
+    for _ in range(100):
         values = calculate_intersection_boxes(100000, 1.50, -1.15, 1, 0.75, 0.4, center_coord= center_coord, P=p)
         temp_values.append(values)
-    values_list.append(((p, st.mean(temp_values[0]), st.stdev(temp_values[0])), (p, st.mean(temp_values[1]), st.stdev(temp_values[1]))))
+    big_vals = [x[1] for x in temp_values]
+    small_vals = [x[0] for x in temp_values]
+    values_list.append(((p, np.mean(small_vals), np.std(small_vals)), (p, np.mean(big_vals), np.std(big_vals))))
 
-for values_big, values_small in values_list:
-    p, mean, std = values_big
+plotline_list = [[[],[],[]],[[],[],[]]] # list of list of small and list of big values, and then a list of all p, mu, sigma in each values list
+for values_small, values_big in values_list:
+    p, mean, stdev = values_small
     p = np.array(p)
     p = p - 0.005
-    plt.errorbar(p, mean, std, marker = "^", color="black", label = "bigbox")
-    p, mean, std = values_small
+    plotline_list[0][0].append(p)
+    plotline_list[0][1].append(mean)
+    plotline_list[0][2].append(stdev)
+    p, mean, stdev = values_big
     p = np.array(p)
     p = p + 0.005
-    plt.errorbar(p, mean, std, marker = "^", color="orange", label = "smallbox")
+    plotline_list[1][0].append(p)
+    plotline_list[1][1].append(mean)
+    plotline_list[1][2].append(stdev)
 
+plt.errorbar(plotline_list[0][0],plotline_list[0][1],plotline_list[0][2], marker="^", color="black", label="smallbox", linestyle = "none")
+plt.errorbar(plotline_list[1][0],plotline_list[1][1],plotline_list[1][2], marker = "^", color="orange", label="bigbox", linestyle = "none")
+plt.xlabel("Value for P")
+plt.ylabel("Found intersecton area")
 plt.legend()
 plt.show()
