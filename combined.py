@@ -339,32 +339,6 @@ def question3_plot(repeats = 100, center_coord=[0, 0, 0.1]):
     return
 
 def ex1(visualize=False):
-<<<<<<< HEAD
-    """
-    prints the found intersection areas and plots the figure discussed in the video of question 1.
-    """
-
-    print("Ex1 - sphere intersect torus, uniform:")
-	
-    b_box = np.array([[-1.15, 1.15], [-1.15, 1.15], [-1.15, 1.15]])
-    b_box_size = np.array([2.3, 2.3, 2.3])
-
-    cases = [(1, 0.75, 0.4),
-			 (1, 0.5 , 0.5)]
-	
-    data = []
-    for i, params in enumerate(cases):
-        r, t_R, t_r = params
-        volume, hits = calculate_intersection_boxes(100000, 1.15, -1.15, r, t_R, t_r, center_coord=[0,0,0], P=1, return_coords=True)
-        hits = np.array(hits)
-        data.append((volume, hits))
-        print(f"  case {i+1}: {volume:.5f}")
-
-    if visualize:
-        fig = plt.figure()
-
-        for i, ((volume, hits), params) in enumerate(zip(data, cases)):
-=======
     print("Ex1 - sphere intersect torus, uniform:")
 
     b_box = np.array([[-1.15, 1.15], [-1.15, 1.15], [-1.15, 1.15]])
@@ -392,18 +366,13 @@ def ex1(visualize=False):
         fig = plt.figure()
 
         for i, ((volume, hits, std_err), params) in enumerate(zip(data, cases)):
->>>>>>> 28a861bb923668897c86c981dc11c6a9327b5cdb
             r, t_R, t_r = params
 
             # 3d scatter plot of samples
             ax = fig.add_subplot(2, 2, (i+1), projection="3d")
-<<<<<<< HEAD
-            ax.set_title(f"case {i+1}: $r_{{sphere}}$ = {r}, $R_{{torus}}$ = {t_R}, $r_{{torus}}$ = {t_r}")
-=======
             ax.set_title(f"case {i+1}:\n\
 $r_{{sphere}}$ = {r}, $R_{{torus}}$ = {t_R}, $r_{{torus}}$ = {t_r}\n\
 vol $\pm$ std_err = {volume:.5f} $\pm$ {std_err:.5f}")
->>>>>>> 28a861bb923668897c86c981dc11c6a9327b5cdb
             ax.set_xlabel("x")
             ax.set_ylabel("y")
             ax.set_zlabel("z")
@@ -455,22 +424,13 @@ vol $\pm$ std_err = {volume:.5f} $\pm$ {std_err:.5f}")
             ax.add_patch(sphere)
             ax.add_patch(b_box_rect)
 
-<<<<<<< HEAD
-=======
             # 2d slice along x-axis: samples
->>>>>>> 28a861bb923668897c86c981dc11c6a9327b5cdb
             mask_slice = (hits[:,1] > -0.05) & (hits[:,1] < 0.05)
             x = hits[mask_slice,0]
             y = hits[mask_slice,2]
             ax.scatter(x, y, s = 1, label="samples")
 
         plt.tight_layout()
-<<<<<<< HEAD
-
-        handles, labels = plt.gca().get_legend_handles_labels()
-        dict_of_labels = dict(zip(labels, handles))
-        plt.legend(dict_of_labels.values(), dict_of_labels.keys())
-=======
         plt.suptitle(f"\
 Monte carlo integration: intersection of sphere and torus \n\
 bounding box: \n\
@@ -483,7 +443,6 @@ $z_{{min}}$ = {b_box[2,0]}, $z_{{max}}$ = {b_box[2,1]}")
         dict_of_labels = dict(zip(labels, handles))
         plt.legend(dict_of_labels.values(), dict_of_labels.keys())
 
->>>>>>> 28a861bb923668897c86c981dc11c6a9327b5cdb
         plt.show()
 
 def main():
