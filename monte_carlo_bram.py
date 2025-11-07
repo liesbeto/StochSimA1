@@ -136,6 +136,12 @@ def ex1(visualize=False):
 			ax.scatter(x, y, s = 1, label="samples")
 
 		plt.tight_layout()
+		plt.suptitle(f"\
+Monte carlo integration: intersection of sphere and torus \n\
+bounding box: \n\
+$x_{{min}}$ = {b_box[0,0]}, $x_{{max}}$ = {b_box[0,1]}\n\
+$y_{{min}}$ = {b_box[0,0]}, $y_{{max}}$ = {b_box[0,1]}\n\
+$z_{{min}}$ = {b_box[0,0]}, $z_{{max}}$ = {b_box[0,1]}")
 
 		# remove doulbe labels
 		handles, labels = plt.gca().get_legend_handles_labels()
