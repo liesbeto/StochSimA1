@@ -163,7 +163,7 @@ def logistic_intersection(N, upper, lower, k, r_maj, r_min, visualise=False):
 def montecarlo_sequence(N, upper, lower, P=1):
     list_coords = []
     for _ in range(N):
-        coords = montecarlo_point(upper, lower, P)
+        coords, small = montecarlo_point(upper, lower, P)
         list_coords.append(coords)
     
     return list_coords
@@ -191,7 +191,7 @@ def plot_freqdist(N, upper, lower, func=montecarlo_sequence):
 
     list_coords = func(N, upper, lower)
     for coord in list_coords:
-        x = list(coord)[0][0]
+        x, y, z = coord
         lx.append(x)
 
     if func == montecarlo_sequence:
@@ -200,6 +200,7 @@ def plot_freqdist(N, upper, lower, func=montecarlo_sequence):
         title = "Logistic Sequence Samples Distribution"
 
     plt.hist(lx, bins=100)
+    plt.xlim(lower-0.05, upper+0.05)
     plt.xlabel("Sample Value")
     plt.ylabel("Frequency")
     plt.title(title)
@@ -417,10 +418,10 @@ def ex1(visualize=False):
 		plt.show()
 
 def main():
-    ex1(visualize=True)
-    plot_freqdist(100000, 1.15, -1.15, montecarlo_sequence)
+    # ex1(visualize=True)
+    # plot_freqdist(100000, 1.15, -1.15, logistic_sequence)
     question2_plot("A", [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3])
-    question3_plot(repeats=100)
+    # question3_plot(repeats=100)
     
 if __name__ == "__main__":
     main()
