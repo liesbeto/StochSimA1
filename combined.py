@@ -437,9 +437,9 @@ $z_{{min}}$ = {b_box[2,0]}, $z_{{max}}$ = {b_box[2,1]}")
 
 def main():
     ex1(visualize=True)
-    #plot_freqdist(100000, 1.15, -1.15, logistic_sequence)
-    #question2_plot("A", [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3])
-    #question3_plot(repeats=100)
+    plot_freqdist(100000, 1.15, -1.15, logistic_sequence)
+    question2_plot("A", [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3])
+    question3_plot(repeats=100)
     
 if __name__ == "__main__":
     main()
