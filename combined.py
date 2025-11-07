@@ -329,99 +329,117 @@ def question3_plot(repeats = 100, center_coord=[0, 0, 0.1]):
     return
 
 def ex1(visualize=False):
-	print("Ex1 - sphere intersect torus, uniform:")
-	
-	b_box = np.array([[-1.15, 1.15], [-1.15, 1.15], [-1.15, 1.15]])
-	b_box_size = np.array([2.3, 2.3, 2.3])
+    print("Ex1 - sphere intersect torus, uniform:")
 
-	cases = [(1, 0.75, 0.4),
-			 (1, 0.5 , 0.5)]
-	
-	data = []
-	for i, params in enumerate(cases):
-		r, t_R, t_r = params
-		volume, hits = calculate_intersection_boxes(100000, 1.15, -1.15, r, t_R, t_r, center_coord=[0,0,0], P=1, return_coords=True)
-		hits = np.array(hits)
-		data.append((volume, hits))
-		print(f"  case {i+1}: {volume:.5f}")
+    b_box = np.array([[-1.15, 1.15], [-1.15, 1.15], [-1.15, 1.15]])
+    b_box_size = b_box[:,1] - b_box[:, 0]
+    n_samples = 100000
 
-	if visualize:
-		fig = plt.figure()
+    cases = [(1, 0.75, 0.4),
+             (1, 0.5 , 0.5)]
 
-		for i, ((volume, hits), params) in enumerate(zip(data, cases)):
-			r, t_R, t_r = params
+    data = []
+    for i, params in enumerate(cases):
+        r, t_R, t_r = params
+        volume, hits = calculate_intersection_boxes(n_samples, 1.15, -1.15, r, t_R, t_r, center_coord=[0,0,0], P=1, return_coords=True)
+        hits = np.array(hits)
+
+        # estimated standard error
+        f_mean = hits.size / n_samples
+        f_var = f_mean * (1 - f_mean)
+        std_err = volume * np.sqrt(f_var / n_samples)
+
+        data.append((volume, hits, std_err))
+        print(f"  case {i+1}: {volume:.5f}")
+
+    if visualize:
+        fig = plt.figure()
+
+        for i, ((volume, hits, std_err), params) in enumerate(zip(data, cases)):
+            r, t_R, t_r = params
 
             # 3d scatter plot of samples
-			ax = fig.add_subplot(2, 2, (i+1), projection="3d")
-			ax.set_title(f"case {i+1}: $r_{{sphere}}$ = {r}, $R_{{torus}}$ = {t_R}, $r_{{torus}}$ = {t_r}")
-			ax.set_xlabel("x")
-			ax.set_ylabel("y")
-			ax.set_zlabel("z")
-			ax.set_box_aspect([1, 1, 1])
-			ax.view_init(elev=40, azim=-60)
+            ax = fig.add_subplot(2, 2, (i+1), projection="3d")
+            ax.set_title(f"case {i+1}:\n\
+$r_{{sphere}}$ = {r}, $R_{{torus}}$ = {t_R}, $r_{{torus}}$ = {t_r}\n\
+vol $\pm$ std_err = {volume:.5f} $\pm$ {std_err:.5f}")
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+            ax.set_zlabel("z")
+            ax.set_box_aspect([1, 1, 1])
+            ax.view_init(elev=40, azim=-60)
 
-			xs = hits[:,0]
-			ys = hits[:,1]
-			zs = hits[:,2]
+            xs = hits[:,0]
+            ys = hits[:,1]
+            zs = hits[:,2]
 
-			ax.scatter(xs, ys, zs, s=1, alpha=0.1)
+            ax.scatter(xs, ys, zs, s=1, alpha=0.1)
 
             # 2d surface along the x-axis
-			x = np.linspace(b_box[0,0], b_box[0,1], 2)
-			z = np.linspace(b_box[2,0], b_box[2,1], 2)
-			X, Z = np.meshgrid(x, z)
-			Y = np.full_like(X, 0)
-			ax.plot_surface(X, Y, Z, color='grey', alpha=0.2)
+            x = np.linspace(b_box[0,0], b_box[0,1], 2)
+            z = np.linspace(b_box[2,0], b_box[2,1], 2)
+            X, Z = np.meshgrid(x, z)
+            Y = np.full_like(X, 0)
+            ax.plot_surface(X, Y, Z, color='grey', alpha=0.2)
 
-			torus1 = plt.Circle(( t_R, 0), t_r, color='r', fill=False, label="torus")
-			torus2 = plt.Circle((-t_R, 0), t_r, color='r', fill=False, label="torus")
-			sphere = plt.Circle((   0, 0), r  , color='g', fill=False, label="sphere")
-			b_box_rect = plt.Rectangle((b_box[0,0], b_box[2,0]), b_box_size[0], b_box_size[2], color='b', fill=False, label="bounding box")
-			ax.add_patch(torus1)
-			ax.add_patch(torus2)
-			ax.add_patch(sphere)
-			ax.add_patch(b_box_rect)
-			art3d.pathpatch_2d_to_3d(torus1, z=0, zdir="y")
-			art3d.pathpatch_2d_to_3d(torus2, z=0, zdir="y")
-			art3d.pathpatch_2d_to_3d(sphere, z=0, zdir="y")
-			art3d.pathpatch_2d_to_3d(b_box_rect, z=0, zdir="y")
+            torus1 = plt.Circle(( t_R, 0), t_r, color='r', fill=False, label="torus")
+            torus2 = plt.Circle((-t_R, 0), t_r, color='r', fill=False, label="torus")
+            sphere = plt.Circle((   0, 0), r  , color='g', fill=False, label="sphere")
+            b_box_rect = plt.Rectangle((b_box[0,0], b_box[2,0]), b_box_size[0], b_box_size[2], color='b', fill=False, label="bounding box")
+            ax.add_patch(torus1)
+            ax.add_patch(torus2)
+            ax.add_patch(sphere)
+            ax.add_patch(b_box_rect)
+            art3d.pathpatch_2d_to_3d(torus1, z=0, zdir="y")
+            art3d.pathpatch_2d_to_3d(torus2, z=0, zdir="y")
+            art3d.pathpatch_2d_to_3d(sphere, z=0, zdir="y")
+            art3d.pathpatch_2d_to_3d(b_box_rect, z=0, zdir="y")
 
-			ax.set_xlim(b_box[0,0], b_box[0,1])
-			ax.set_ylim(b_box[1,0], b_box[1,1])
-			ax.set_zlim(b_box[2,0], b_box[2,1])
+            ax.set_xlim(b_box[0,0], b_box[0,1])
+            ax.set_ylim(b_box[1,0], b_box[1,1])
+            ax.set_zlim(b_box[2,0], b_box[2,1])
 
             # 2d slice along x-axis: analytical circles
-			ax = fig.add_subplot(2, 2, (i+1)+2)
-			ax.set_title("2d slice along x-axis")
-			ax.axis('equal')
-			ax.set_xlabel("x")
-			ax.set_ylabel("z")
-			torus1 = plt.Circle(( t_R, 0), t_r, color='r', fill=False, label="torus")
-			torus2 = plt.Circle((-t_R, 0), t_r, color='r', fill=False, label="torus")
-			sphere = plt.Circle((   0, 0), r  , color='g', fill=False, label="sphere")
-			b_box_rect = plt.Rectangle((b_box[0,0], b_box[2,0]), b_box_size[0], b_box_size[2], color='b', fill=False, label="bounding box")
-			ax.add_patch(torus1)
-			ax.add_patch(torus2)
-			ax.add_patch(sphere)
-			ax.add_patch(b_box_rect)
+            ax = fig.add_subplot(2, 2, (i+1)+2)
+            ax.set_title("2d slice along x-axis")
+            ax.axis('equal')
+            ax.set_xlabel("x")
+            ax.set_ylabel("z")
+            torus1 = plt.Circle(( t_R, 0), t_r, color='r', fill=False, label="torus")
+            torus2 = plt.Circle((-t_R, 0), t_r, color='r', fill=False, label="torus")
+            sphere = plt.Circle((   0, 0), r  , color='g', fill=False, label="sphere")
+            b_box_rect = plt.Rectangle((b_box[0,0], b_box[2,0]), b_box_size[0], b_box_size[2], color='b', fill=False, label="bounding box")
+            ax.add_patch(torus1)
+            ax.add_patch(torus2)
+            ax.add_patch(sphere)
+            ax.add_patch(b_box_rect)
 
-			mask_slice = (hits[:,1] > -0.05) & (hits[:,1] < 0.05)
-			x = hits[mask_slice,0]
-			y = hits[mask_slice,2]
-			ax.scatter(x, y, s = 1, label="samples")
+            # 2d slice along x-axis: samples
+            mask_slice = (hits[:,1] > -0.05) & (hits[:,1] < 0.05)
+            x = hits[mask_slice,0]
+            y = hits[mask_slice,2]
+            ax.scatter(x, y, s = 1, label="samples")
 
-		plt.tight_layout()
+        plt.tight_layout()
+        plt.suptitle(f"\
+Monte carlo integration: intersection of sphere and torus \n\
+bounding box: \n\
+$x_{{min}}$ = {b_box[0,0]}, $x_{{max}}$ = {b_box[0,1]}\n\
+$y_{{min}}$ = {b_box[1,0]}, $y_{{max}}$ = {b_box[1,1]}\n\
+$z_{{min}}$ = {b_box[2,0]}, $z_{{max}}$ = {b_box[2,1]}")
 
-		handles, labels = plt.gca().get_legend_handles_labels()
-		dict_of_labels = dict(zip(labels, handles))
-		plt.legend(dict_of_labels.values(), dict_of_labels.keys())
-		plt.show()
+        # remove double labels in legend
+        handles, labels = plt.gca().get_legend_handles_labels()
+        dict_of_labels = dict(zip(labels, handles))
+        plt.legend(dict_of_labels.values(), dict_of_labels.keys())
+
+        plt.show()
 
 def main():
     ex1(visualize=True)
-    plot_freqdist(100000, 1.15, -1.15, logistic_sequence)
-    question2_plot("A", [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3])
-    question3_plot(repeats=100)
+    #plot_freqdist(100000, 1.15, -1.15, logistic_sequence)
+    #question2_plot("A", [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3])
+    #question3_plot(repeats=100)
     
 if __name__ == "__main__":
     main()
